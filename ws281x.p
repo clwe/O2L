@@ -6,7 +6,7 @@
 #define GPIO_SETDATAOUT 0x194
 
 #define GPIO_BASE GPIO0
-#define GPIO_PIN 8
+#define GPIO_PIN 23
 
 
 .origin 0
