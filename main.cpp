@@ -77,60 +77,62 @@ int parseMessage(oscpkt::Message msg, const char* address, void*)
 			error = kUnmatchedPattern;
 		if(kOk == error)
 		{
-			size_t start;
-			args.popNumber(start);
-			start *= kBytesPerRgb;
-			float gain;
-			args.popNumber(gain);
-			size_t numArgs = args.nbArgRemaining();
-			if(!numArgs || (kRgb == color && numArgs % kBytesPerRgb && !args.isBlob()) || !args.isOk())
-				error = kWrongArguments;
+			if(args.isBlob()) {
+				args.popBlob(gRgb);
+			} 
 			else {
-				int n = 0;
-				while(args.nbArgRemaining() && n < gRgb.size())
-				{
-					if(args.isNumber()) {
-						float val;
-						args.popNumber(val);
-						if(!args.isOk()) {
-							error = kWrongArguments;
-							break;
-						}
-						uint8_t ledValue = clipForLed(val * gain);
-						// now use the retrieved value
-						if(kRgb == color)
-						{
-							// in kRgb mode, set each color per each LED in order
-							gRgb[start + n] = ledValue;
-							++n;
-						} else {
-							// in monochrome mode, set the corresponding color
-							// and zero out the rest
-							for(size_t c = 0; c < kBytesPerRgb; ++c)
-							{	
-								if(color == c)
-									gRgb[start + n] = ledValue;
-								else
-									gRgb[start + n] = 0;
+				size_t start;
+				args.popNumber(start);
+				start *= kBytesPerRgb;
+				float gain;
+				args.popNumber(gain);
+				size_t numArgs = args.nbArgRemaining();
+				if(!numArgs || (kRgb == color && numArgs % kBytesPerRgb) || !args.isOk())
+					error = kWrongArguments;
+				else {
+					int n = 0;
+					while(args.nbArgRemaining() && n < gRgb.size())
+					{
+						if(args.isNumber()) {
+							float val;
+							args.popNumber(val);
+							if(!args.isOk()) {
+								error = kWrongArguments;
+								break;
+							}
+							uint8_t ledValue = clipForLed(val * gain);
+							// now use the retrieved value
+							if(kRgb == color)
+							{
+								// in kRgb mode, set each color per each LED in order
+								gRgb[start + n] = ledValue;
 								++n;
+							} else {
+								// in monochrome mode, set the corresponding color
+								// and zero out the rest
+								for(size_t c = 0; c < kBytesPerRgb; ++c)
+								{	
+									if(color == c)
+										gRgb[start + n] = ledValue;
+									else
+										gRgb[start + n] = 0;
+									++n;
+								}
 							}
 						}
+						else args.pop(); // ingore argument
 					}
-					else if(args.isBlob()) {
-						args.popBlob(gRgb);
-					}
-					else args.pop(); // ingore argument
-				}
-				if(kOk == error)
+				}	
+			}
+			if(kOk == error)
+			{
+				strip.clear();
+				for (uint32_t p = 0; p < kNumLeds; p++)
 				{
-					strip.clear();
-					for (uint32_t p = 0; p < kNumLeds; p++)
-					{
-						size_t k = p * kBytesPerRgb;
-						strip.setPixelColor(p, PixelBone_Pixel::Color(gRgb[k + 0], gRgb[k + 1], gRgb[k + 2]));
-					}
-					strip.show();
+					size_t k = p * kBytesPerRgb;
+					strip.setPixelColor(p, PixelBone_Pixel::Color(gRgb[k + 0], gRgb[k + 1], gRgb[k + 2]));
 				}
+				strip.show();
 			}
 		}
 	} else
