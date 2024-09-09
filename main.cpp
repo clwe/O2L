@@ -45,7 +45,7 @@ static uint8_t clipForLed(T val)
 {
 	return val > 255 ? 255 : val;
 }
-static std::vector<uint8_t> gRgb(kNumLeds * kBytesPerRgb);
+static std::vector<char> gRgb(kNumLeds * kBytesPerRgb);
 int parseMessage(oscpkt::Message msg, const char* address, void*)
 {
 	oscpkt::Message::ArgReader args = msg.arg();
@@ -83,37 +83,43 @@ int parseMessage(oscpkt::Message msg, const char* address, void*)
 			float gain;
 			args.popNumber(gain);
 			size_t numArgs = args.nbArgRemaining();
-			if(!numArgs || (kRgb == color && numArgs % kBytesPerRgb) || !args.isOk())
+			if(!numArgs || (kRgb == color && numArgs % kBytesPerRgb && !args.isBlob()) || !args.isOk())
 				error = kWrongArguments;
 			else {
 				int n = 0;
 				while(args.nbArgRemaining() && n < gRgb.size())
 				{
-					float val;
-					args.popNumber(val);
-					if(!args.isOk()) {
-						error = kWrongArguments;
-						break;
-					}
-					uint8_t ledValue = clipForLed(val * gain);
-					// now use the retrieved value
-					if(kRgb == color)
-					{
-						// in kRgb mode, set each color per each LED in order
-						gRgb[start + n] = ledValue;
-						++n;
-					} else {
-						// in monochrome mode, set the corresponding color
-						// and zero out the rest
-						for(size_t c = 0; c < kBytesPerRgb; ++c)
+					if(args.isNumber()) {
+						float val;
+						args.popNumber(val);
+						if(!args.isOk()) {
+							error = kWrongArguments;
+							break;
+						}
+						uint8_t ledValue = clipForLed(val * gain);
+						// now use the retrieved value
+						if(kRgb == color)
 						{
-							if(color == c)
-								gRgb[start + n] = ledValue;
-							else
-								gRgb[start + n] = 0;
+							// in kRgb mode, set each color per each LED in order
+							gRgb[start + n] = ledValue;
 							++n;
+						} else {
+							// in monochrome mode, set the corresponding color
+							// and zero out the rest
+							for(size_t c = 0; c < kBytesPerRgb; ++c)
+							{	
+								if(color == c)
+									gRgb[start + n] = ledValue;
+								else
+									gRgb[start + n] = 0;
+								++n;
+							}
 						}
 					}
+					else if(args.isBlob()) {
+						args.popBlob(gRgb);
+					}
+					else args.pop(); // ingore argument
 				}
 				if(kOk == error)
 				{
