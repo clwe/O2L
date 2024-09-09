@@ -27,7 +27,7 @@
 #include <signal.h>
 
 const int gLocalPort = 7562; //port for incoming OSC messages
-uint8_t kNumLeds = 23; // number of LEDs on the strip
+uint8_t kNumLeds = 225; // number of LEDs on the strip
 
 static PixelBone_Pixel strip(kNumLeds);
 static OscReceiver oscReceiver;
