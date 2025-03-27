@@ -31,6 +31,8 @@ PixelBone_Pixel::PixelBone_Pixel(uint16_t pixel_count)
 };
 
 PixelBone_Pixel::~PixelBone_Pixel() {
+  clear();
+  show();
   ws281x->command = 0xFF;
   pru_close(pru0);
 }
